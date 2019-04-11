@@ -1,0 +1,480 @@
+---
+title: "Top 5 Harvard General Education Courses by Undergraduate Enrollment"
+subtitle: "From Fall 2016 to Spring 2019"
+author: "Céline Vendler"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+# Set document settings, standardizing the width, aspect ratio or height:width
+# ratio, and alignment of future figures; I choose this wide width so that all
+# the course name labels fit within their respective tiles; I choose this aspect
+# ratio, as in Chapter 28.7.1 of R4DS it says that 0.618 is "the golden ratio,"
+# and I choose to center-align my figures, as doing so, according to the same
+# chapter of R4DS, "give[s] plots room to breathe"
+
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE, 
+                      error = FALSE, 
+                      warning = FALSE, 
+                      fig.width = 14.4, 
+                      fig.asp = 0.618, 
+                      fig.align = "center")
+
+# Load necessary libraries
+
+library(gganimate)
+library(janitor)
+library(fs)
+library(readxl)
+library(tidyverse)
+
+```
+
+```{r download, cache=TRUE}
+
+# Download the xlsx file containing course enrollment data from Fall 2016
+# directly from the link address housed within the Harvard Faculty of Arts and
+# Sciences' Registrar's Office website; set the name of the downloaded file to
+# be "fall_2016.xlsx" for clarity and ease of management
+
+download.file(url = "http://registrar.fas.harvard.edu/files/fas-registrar/files/copy_of_class_enrollment_summary_by_term_10.06.2016.xlsx", 
+              destfile = "fall_2016.xlsx", 
+              mode = "wb")
+
+# Read in the file "fall_2016.xlsx," skip the first three lines of the file, and
+# store as a new dataset called "fall_2016"
+
+fall_2016 <- read_xlsx("fall_2016.xlsx", skip = 3)
+
+# Delete the file "fall_2016.xlsx"
+
+file_delete("fall_2016.xlsx")
+
+
+# Download the xlsx file containing course enrollment data from Spring 2017
+# directly from the link address housed within the Harvard Faculty of Arts and
+# Sciences' Registrar's Office website; set the name of the downloaded file to
+# be "spring_2017.xlsx" for clarity and ease of management
+
+download.file(url = "http://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_2017_03_07_final_0.xlsx", 
+              destfile = "spring_2017.xlsx", 
+              mode = "wb")
+
+# Read in the file "spring_2017.xlsx," skip the first three lines of the file,
+# and store as a new dataset called "spring_2017"
+
+spring_2017 <- read_xlsx("spring_2017.xlsx", skip = 3)
+
+# Delete the file "spring_2017.xlsx"
+
+file_delete("spring_2017.xlsx")
+
+
+# Download the xlsx file containing course enrollment data from Fall 2017
+# directly from the link address housed within the Harvard Faculty of Arts and
+# Sciences' Registrar's Office website; set the name of the downloaded file to
+# be "fall_2017.xlsx" for clarity and ease of management
+
+download.file(url = "https://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_10.20.17.xlsx", 
+              destfile = "fall_2017.xlsx", 
+              mode = "wb")
+
+# Read in the file "fall_2017.xlsx," skip the first three lines of the file, and
+# store as a new dataset called "fall_2017"
+
+fall_2017 <- read_xlsx("fall_2017.xlsx", skip = 3)
+
+# Delete the file "fall_2017.xlsx"
+
+file_delete("fall_2017.xlsx")
+
+
+# Download the xlsx file containing course enrollment data from Spring 2018
+# directly from the link address housed within the Harvard Faculty of Arts and
+# Sciences' Registrar's Office website; set the name of the downloaded file to
+# be "spring_2018.xlsx" for clarity and ease of management
+
+download.file(url = "https://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_03.06.18.xlsx", 
+              destfile = "spring_2018.xlsx", 
+              mode = "wb")
+
+# Read in the file "spring_2018.xlsx," skip the first three lines of the file,
+# and store as a new dataset called "spring_2018"
+
+spring_2018 <- read_xlsx("spring_2018.xlsx", skip = 3)
+
+# Delete the file "spring_2018.xlsx"
+
+file_delete("spring_2018.xlsx")
+
+
+# Download the xlsx file containing course enrollment data from Fall 2018
+# directly from the link address housed within the Harvard Faculty of Arts and
+# Sciences' Registrar's Office website; set the name of the downloaded file to
+# be "fall_2018.xlsx" for clarity and ease of management
+
+download.file(url = "https://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_10.24.18.xlsx", 
+              destfile = "fall_2018.xlsx", 
+              mode = "wb")
+
+# Read in the file "fall_2018.xlsx," skip the first two lines of the file, and
+# store as a new dataset called "fall_2018"
+
+fall_2018 <- read_xlsx("fall_2018.xlsx", skip = 2)
+
+# Delete the file "fall_2018.xlsx"
+
+file_delete("fall_2018.xlsx")
+
+
+# Download the xlsx file containing course enrollment data from Spring 2019
+# directly from the link address housed within the Harvard Faculty of Arts and
+# Sciences' Registrar's Office website; set the name of the downloaded file to
+# be "spring_2019.xlsx" for clarity and ease of management
+
+download.file(url = "https://registrar.fas.harvard.edu/files/fas-registrar/files/class_enrollment_summary_by_term_3.22.19.xlsx", 
+              destfile = "spring_2019.xlsx", 
+              mode = "wb")
+
+# Read in the file "spring_2019.xlsx," skip the first three lines of the file,
+# and store as a new dataset called "spring_2019"
+
+spring_2019 <- read_xlsx("spring_2019.xlsx", skip = 3)
+
+# Delete the file "spring_2019.xlsx"
+
+file_delete("spring_2019.xlsx")
+
+```
+
+```{r clean_data}
+
+# Create a new dataset called "fall_2016_to_spring_2019_gemeds" ("gemeds" is a
+# term I made up to indicate a "gem" General Education course, meaning one that
+# is highly sought after and enrolled in), containing the bound rows of all the
+# datasets created above (all the course enrollment data from semesters Fall
+# 2016 to Spring 2019); set the ID to be "semester" (which I will later split
+# into "season" and "year" in order to be able to group the data by year in
+# making my graphics below)
+
+fall_2016_to_spring_2019_gemeds <- bind_rows("Fall 2016" = fall_2016, "Spring 2017" = spring_2017, 
+                                             "Fall 2017" = fall_2017, "Spring 2018" = spring_2018, 
+                                             "Fall 2018" = fall_2018, "Spring 2019" = spring_2019, 
+                                             .id = "semester") %>% 
+  
+  # Clean up the variable names by changing their case to "snake_case" where all
+  # letters are lowercase and yoked together by underscores
+  
+  clean_names() %>% 
+  
+  # Separate values of "semester" into two new columns, "season" and "year",
+  # using a space (" ") as the separator; remove "semester"
+  
+  separate(semester, 
+           c("season", "year"), 
+           sep = " ", 
+           remove = TRUE) %>% 
+  
+  # Filter the data to keep only observations for General Education courses
+  
+  filter(course_department == "General Education") %>% 
+  
+  # Group the data by "season" and "year" in order to be able to arrange the
+  # data in descending order of undergraduate enrollment by semester
+  
+  group_by(season, year) %>% 
+  
+  # Arrange the data in descending order of undergraduate enrollment by semester
+  
+  arrange(desc(u_grad)) %>% 
+  
+  # In my graphics, I want to look only at the top five General Education
+  # courses by undergraduate enrollment for every semester; thus, select only
+  # the first five rows of data for each grouped semester
+  
+  slice(1:5) %>% 
+  
+  # Recode certain course names so that course names with confusing
+  # abbreviations ("Arch", "Chnse", "Pol Th") or that are otherwise not
+  # sufficiently informative ("From Hebrew Bible to Judaism" or "Intro to the
+  # Bible" might be confused with "The Hebrew Bible", for example) are given
+  # more descriptive names; I used the course catalogue on my.harvard.edu as
+  # well as the Q Guide, which contains archived courses, to determine these
+  # names, favoring the full names of the courses as they are listed in the
+  # course catalogue or, as in the case of "Pyramid Schemes" and "Moctezuma's
+  # Mexico", calling courses what they are known as among students
+  
+  mutate(course_name = recode(course_name, 
+                              `Arch Hist of Ancient Egypt` = "Pyramid Schemes", 
+                              `Civil War: Turner-Birth Nation` = "The Civil War from Nat Turner to Birth of a Nation", 
+                              `Classic Chnse Ethical & Pol Th` = "Classical Chinese Ethical and Political Theory", 
+                              `From Hebrew Bible to Judaism` = "From the Hebrew Bible to Judaism, the Old Testament to Christianity", 
+                              `Ignorance,Lies,Hogwash,Humbug` = "Ignorance, Lies, Hogwash, & Humbug", 
+                              `Intro to the Bible` = "Introduction to the Bible in the Humanities/Arts", 
+                              `Moctezuma's Mexico: Then & Now` = "Moctezuma's Mexico", 
+                              `Money, Markets & Morals` = "Money, Markets, & Morals", 
+                              `World Health` = "Is Globalization Good/Bad for World Health?")) %>% 
+  
+  # Select only the variables needed going forward: "season", "year", "course_name", and "u_grad"
+  
+  select(c(season, year, course_name, u_grad))
+
+
+# Create a new dataset called "fall_gemeds" to contain only data for the fall
+# semesters (2016, 2017, and 2018), as I will be making two graphics: one for
+# changes across fall semesters in the top five General Education courses by
+# undergraduate enrollement, and one for changes across spring semesters in the
+# same area; I choose to make two graphics, as Kieran Healy writes that while
+# "[i]t would be possible to do this with a facet...[a]n alternative is to make
+# two separate plots and then arrange them just as we like"; begin with the
+# "fall_2016_to_spring_2019_gemeds" dataset
+
+fall_gemeds <- fall_2016_to_spring_2019_gemeds %>% 
+  
+  # Filter the data to keep only observations for fall semesters
+  
+  filter(season == "Fall")
+
+
+# Create a new dataset called "spring_gemeds" to contain only data for the spring
+# semesters (2017, 2018, and 2019); begin with the
+# "fall_2016_to_spring_2019_gemeds" dataset
+
+spring_gemeds <- fall_2016_to_spring_2019_gemeds %>% 
+  
+  # Filter the data to keep only observations for spring semesters
+  
+  filter(season == "Spring")
+
+```
+
+<br>
+
+```{r fall_graphic, cache = TRUE}
+
+# Many thanks to
+# https://stackoverflow.com/questions/52623722/how-does-gganimate-order-an-ordered-bar-time-series
+# for teaching me how to create this kind of animation
+
+# To make my graphic for fall semesters, begin with the "fall_gemeds" dataset
+
+fall_gemeds %>% 
+  
+  # Group the data by "year" in order to be able to assign order numbers (1st
+  # most enrolled-in course, 2nd most enrolled-in course, etc.) to courses by
+  # fall semester; these order numbers are necessary in informing the movement
+  # of my animation
+  
+  group_by(year) %>% 
+  
+  # Create a new variable called "order", assigning order numbers to courses by
+  # fall semester; I do not use min_rank(desc(u_grad)), which would assign "1",
+  # for example, to "Classical Chinese Ethical and Political Theory", the 1st
+  # most enrolled-in General Education ourse of Fall 2016, but rather use
+  # min_rank(u_grad), which assigns "Classical Chinese Ethical and Political
+  # Theory" "5", as my later flipping of the coordinates will result visually in
+  # the coorect order from top to bottom
+  
+  mutate(order = min_rank(u_grad)) %>% 
+  
+  # Plot the modified "fall_gemeds" dataset using ggplot, setting "order" as the
+  # x-axis variable, "u_grad" as the y-axis variable (these assignments will
+  # later be flipped using the "coord_flip" function), and setting group to
+  # "course_name" so that names and tiles move together in the animation
+  
+  ggplot(aes(x = order, y = u_grad, group = course_name)) + 
+  
+  # Flip the coordinates so that x becomes y and y becomes x; visually, "u_grad"
+  # appears as the x-axis variable, and "order" appears as the y-axis variable;
+  # I choose to flip the coordinates in this way for better visibility of
+  # axis-tick labels; in one of Healy's examples, he writes, "If we map religion
+  # to the x-axis, the labels will overlap and become illegible...It makes more
+  # sense to put the religions on the y-axis and the percent scores on the
+  # x-axis"; as the same thing would happen were I to map individual courses to
+  # the x-axis, I followed Healy's advice and put "order" on the y-axis and
+  # "u_grad" on the x-axis
+  
+  coord_flip() + 
+  
+  # Make the plot a tile plot to make a pleasing animation with gganimate; in
+  # order to make the tile plot resemble a bar plot, center the tiles for each
+  # course at half of their undergraduate enrollment (u_grad/2) so that they
+  # begin at 0 and end at their respective undergraduate enrollments; set the
+  # tiles' heights (which visually appear as their widths) to be equal to their
+  # respective undergraduate enrollments (height = u_grad); set the tiles'
+  # widths (which visually appear as their heights) to 0.7 so that there is
+  # sufficient space separating columns corresponding to different classes; and
+  # set fill to "course_name" so that each course's tile is a different color;
+  # remove the legend from view, as I will indicate columns' course names
+  # through the "geom_text" function below
+  
+  geom_tile(aes(y = u_grad/2, height = u_grad, width = 0.7, fill = course_name), 
+            show.legend = FALSE) + 
+  
+  # Add bolded text to each tile via "geom_text" indicating each tile's
+  # corresponding course name; within the aesthetics, I set y equal to 0 as a
+  # filler value because the horizontal adjustment (hjust = 0) will do the work
+  # of aligning the text at 0
+  
+  geom_text(aes(y = 0, label = course_name, fontface = "bold"), 
+            hjust = 0) + 
+  
+  # Give the plot a more informative y-axis label (which, visually, is the
+  # x-axis label), a title, and a caption
+  
+  labs(y = "Undergraduate Enrollment", 
+       title = "Top 5 Harvard General Education Courses by Undergraduate Enrollment: Fall {closest_state}", 
+       caption = "Source: The Harvard Faculty of Arts and Sciences' Registrar's Office\nNote: Made using course enrollment data from Fall 2016, 2017, and 2018") + 
+  
+  # Resize and make bold the title of the plot as well as the x-axis title
+  # (which is also visually the x-axis title, here); resize the x-axis text;
+  # remove the y-axis title, text, and ticks from the plot; and resize the
+  # caption of the plot
+  
+  theme(plot.title = element_text(size = 26, face = "bold"), 
+        axis.title.x = element_text(size = 16, face = "bold"), 
+        axis.text.x = element_text(size = 16), 
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(), 
+        plot.caption = element_text(size = 13)) + 
+  
+  # Apply RColorBrewer’s scale to the fill aesthetic per Healy's recommendation,
+  # using the qualitative palette "Set3", as other palettes (sequential,
+  # diverging) would not be appropriate here; I am filling by "course_name", and
+  # Healy counsels us not to "map sequential scales to categorical palettes, or
+  # use a diverging palette for a variable with no well-defined midpoint"
+  
+  scale_fill_brewer(palette = "Set3") + 
+  
+  # Make the plot an animation, transitioning from panel to panel showing the
+  # top five general education courses by undergraduate enrollment in order by
+  # year (by fall semester); set the transition length and state length to 0.1
+  
+  transition_states(year, transition_length = 0.1, state_length = 0.1) + 
+  
+  # Define how entering data behaves, making it so that entering data fades into
+  # the plot in the animation (so that when new classes come to the fore it is
+  # not so jarring a transition)
+  
+  enter_fade() + 
+  
+  # Define how exiting data behaves, making it so that exiting data fades out of
+  # the plot in the animation
+  
+  exit_fade()
+
+```
+
+```{r spring_graphic, cache = TRUE}
+
+# Many thanks again to
+# https://stackoverflow.com/questions/52623722/how-does-gganimate-order-an-ordered-bar-time-series
+# for teaching me how to create this kind of animation
+
+# To make my graphic for spring semesters, begin with the "spring_gemeds"
+# dataset
+
+spring_gemeds %>% 
+  
+  # Group the data by "year" in order to be able to assign order numbers (1st
+  # most enrolled-in course, 2nd most enrolled-in course, etc.) to courses by
+  # spring semester; these order numbers are necessary in informing the movement
+  # of my animation
+  
+  group_by(year) %>% 
+  
+  # Create a new variable called "order", assigning order numbers to courses by
+  # spring semester; I use min_rank(u_grad) for the same reason as in the fall
+  # graphic
+  
+  mutate(order = min_rank(u_grad)) %>% 
+  
+  # Plot the modified "spring_gemeds" dataset using ggplot, setting "order" as
+  # the x-axis variable, "u_grad" as the y-axis variable (these assignments will
+  # later be flipped using the "coord_flip" function), and setting group to
+  # "course_name" so that names and tiles move together in the animation
+  
+  ggplot(aes(x = order, y = u_grad, group = course_name)) + 
+  
+  # Flip the coordinates so that x becomes y and y becomes x; visually, "u_grad"
+  # appears as the x-axis variable, and "order" appears as the y-axis variable;
+  # I choose to flip the coordinates in this way for the same reason as in the
+  # fall graphic
+  
+  coord_flip() + 
+  
+  # Make the plot a tile plot to make a pleasing animation with gganimate; in
+  # order to make the tile plot resemble a bar plot, center the tiles for each
+  # course at half of their undergraduate enrollment (u_grad/2) so that they
+  # begin at 0 and end at their respective undergraduate enrollments; set the
+  # tiles' heights (which visually appear as their widths) to be equal to their
+  # respective undergraduate enrollments (height = u_grad); set the tiles'
+  # widths (which visually appear as their heights) to 0.7 so that there is
+  # sufficient space separating columns corresponding to different classes; and
+  # set fill to "course_name" so that each course's tile is a different color;
+  # remove the legend from view, as I will indicate columns' course names
+  # through the "geom_text" function below
+  
+  geom_tile(aes(y = u_grad/2, height = u_grad, width = 0.7, fill = course_name), 
+            show.legend = FALSE) + 
+  
+  # Add bolded text to each tile via "geom_text" indicating each tile's
+  # corresponding course name; within the aesthetics, I set y equal to 0 as a
+  # filler value because the horizontal adjustment (hjust = 0) will do the work
+  # of aligning the text at 0
+  
+  geom_text(aes(y = 0, label = course_name, fontface = "bold"), 
+            hjust = 0) + 
+  
+  
+  
+  scale_y_continuous(breaks = seq(0, 662, by = 200), 
+                     limits = c(0, 662)) + 
+  
+  # Give the plot a more informative y-axis label (which, visually, is the
+  # x-axis label), a title, and a caption
+  
+  labs(y = "Undergraduate Enrollment", 
+       title = "Top 5 Harvard General Education Courses by Undergraduate Enrollment: Spring {closest_state}", 
+       caption = "Source: The Harvard Faculty of Arts and Sciences' Registrar's Office\nNote: Made using course enrollment data from Spring 2017, 2018, and 2019") + 
+  
+  # Resize and make bold the title of the plot as well as the x-axis title
+  # (which is also visually the x-axis title, here); resize the x-axis text;
+  # remove the y-axis title, text, and ticks from the plot; and resize the
+  # caption of the plot
+  
+  theme(plot.title = element_text(size = 25, face = "bold"), 
+        axis.title.x = element_text(size = 16, face = "bold"), 
+        axis.text.x = element_text(size = 16), 
+        axis.title.y = element_blank(), 
+        axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(), 
+        plot.caption = element_text(size = 13)) + 
+  
+  # Apply RColorBrewer’s scale to the fill aesthetic per Healy's recommendation,
+  # using the qualitative palette "Set3" for the same reason as in the fall
+  # graphic
+  
+  scale_fill_brewer(palette = "Set3") + 
+  
+  # Make the plot an animation, transitioning from panel to panel showing the
+  # top five general education courses by undergraduate enrollment in order by
+  # year (by spring semester); set the transition length and state length to 0.1
+  
+  transition_states(year, transition_length = 0.1, state_length = 0.1) + 
+  
+  # Define how entering data behaves, making it so that entering data fades into
+  # the plot in the animation (so that when new classes come to the fore it is
+  # not so jarring a transition)
+  
+  enter_fade() + 
+  
+  # Define how exiting data behaves, making it so that exiting data fades out of
+  # the plot in the animation
+  
+  exit_fade()
+
+```
